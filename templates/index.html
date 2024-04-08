@@ -7,6 +7,7 @@
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/styl.css">
 </head>
 <body>
 
@@ -30,7 +31,7 @@
                 </li>
             {% else %}
                 <li class="nav-item">
-                    <a class="nav-link" href="/payment">Payment</a>
+                    <a class="nav-link" href="/currency">Payment</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/account">Account</a>
@@ -51,12 +52,15 @@
             <!-- Financial Summary -->
             <div class="card mb-4">
                 <div class="card-body">
-                    <h2 class="card-title">Informacje o rynku kryptowalut</h2>
                     <p>Ilość walut na rynku: <b>{{ market_info.active_cryptocurrencies }}</b></p>
                     <h2 class="card-title">Kursy kryptowalut</h2>
                     <ul>
                         {% for cryptocurrency in cryptocurrencies_data %}
-                            <li>{{ cryptocurrency.name }} ({{ cryptocurrency.symbol }}) : <b>{{ cryptocurrency.current_price|round(2) }} USD</b></li>
+                            <li>
+                                <img src="{{ cryptocurrency.icon_url }}" alt="{{ cryptocurrency.name }} icon" style="height: 20px; width: 20px;">
+                                {{ cryptocurrency.name }} <span class="crypto-symbol">{{ cryptocurrency.symbol | upper }}</span> : <b>{{ cryptocurrency.current_price|round(2) }} USD</b>
+                                <button></button>
+                            </li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -80,7 +84,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="/static/chart.js"></script>
-<script src="/static/form.js"></script>
+<script src="/static/skrypt.js"></script>
 
 </body>
 </html>

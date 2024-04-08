@@ -1,9 +1,9 @@
-from flask import Flask, render_template, redirect, request, url_for, session
+from flask import Flask, render_template, redirect, request, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 import hashlib
 import crypto_client
 from sqlalchemy import extract, func
-import datetime
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
@@ -26,9 +26,11 @@ class Balance(db.Model):
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    date = db.Column(db.DateTime, nullable=False)
+    currency_id = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, nullable=False) 
     amount = db.Column(db.Float, nullable=False)
+    purchase_price = db.Column(db.Float, nullable=False)
+    purchase_date = db.Column(db.DateTime, default=datetime.utcnow)
 
 @app.before_request 
 def create_tables():
@@ -99,7 +101,7 @@ def account():
     user = User.query.filter_by(username=session['username']).first()
     current_balance = user.balance.current_balance if user.balance else 0
 
-    month_transaction_sum = get_monthly_transaction_sum(user)
+    month_transaction_sum = get_monthly_transaction_sum(user.id)
 
     return render_template("account.html", current_balance=current_balance, month_transaction_sum=month_transaction_sum)
 
@@ -130,25 +132,46 @@ def add_funds():
         return redirect(url_for('account'))
     return render_template('account.html')
 
-@app.route("/expenses")
-def expenses():
-    user_id = session.get('user_id')
-    transactions= Transaction.query.filter_by(user_id=user_id).all()
-
-    expenses_by_month = [0] * 12
-    for transaction in transactions:
-        month = transaction.date.month - 1
-        expenses_by_month[month] += transaction.amount
+@app.route("/currency/<int:currency_id>/purchase", methods=['POST', 'GET'])
+def purchase_currency(currency_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
     
-    return render_template("account.html", expenses_by_month=expenses_by_month)
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        flash("Błąd: użytkownik niezalogowany.", 'error')
+        return redirect(url_for('login'))
+    
+    cryptocurrencies = crypto_client.get_top_cryptocurrencies()
+    if currency_id < len(cryptocurrencies):
+        currency = cryptocurrencies[currency_id]
+        currency_name = currency['name']
+        currency_price = currency['current_price']
+    else:
+        flash('Nie znaleziono waluty.', 'error')
+        return redirect(url_for('homepage'))
+    
+    if request.method == 'POST':
+        amount = float(request.form['amount'])
+        purchase_price = currency_price * amount
+        new_transaction = Transaction(user_id=user.id, currency_id=currency_id, amount=amount, purchase_price=purchase_price)
+
+        db.session.add(new_transaction)
+        db.session.commit()
+        
+        flash(f'Zakupiono {amount} {currency_name} za {purchase_price} USD.', 'success')
+        return redirect(url_for('account'))
+    
+    return render_template('purchase_currency.html', currency=currency, currency_id=currency_id)
 
 @app.route("/")
 def homepage():
+    crypto_icon = crypto_client.get_crypto_curency_icon(coin_id='bitcoin')
     cryptocurrencies_data = crypto_client.get_top_cryptocurrencies()
     market_info = crypto_client.get_market_info()
     session_status = 'username' in session
     
-    return render_template("index.html", session_status=session_status, cryptocurrencies_data=cryptocurrencies_data, market_info=market_info)
+    return render_template("index.html", session_status=session_status, cryptocurrencies_data=cryptocurrencies_data, market_info=market_info, crypto_icon=crypto_icon)
 
 if __name__ == "__main__":
     app.run(debug=True)

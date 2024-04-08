@@ -1,0 +1,28 @@
+{% extends "index.html" %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2>Szczegóły waluty: {{ currency.name }}</h2>
+            <p>Cena: {{ currency.current_price }} USD</p>
+            <!-- Tutaj mogą znajdować się inne informacje o walucie -->
+
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h4 class="card-title">Zakup {{ currency.name }}</h4>
+                    <form method="POST" action="{{ url_for('purchase_currency', currency_id=currency.id) }}">
+                        <div class="form-group">
+                            <label for="amount">Ilość:</label>
+                            <input type="number" class="form-control" id="amount" name="amount" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Kup</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

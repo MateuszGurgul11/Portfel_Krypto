@@ -1,4 +1,5 @@
 import requests
+import crypto_client
 
 def get_top_cryptocurrencies():
     # Adres URL punktu końcowego dla danych o najpopularniejszych kryptowalutach
@@ -20,14 +21,31 @@ def get_top_cryptocurrencies():
     if response.status_code == 200:
         # Parsowanie danych JSON z odpowiedzi
         data = response.json()
+        cryptocurrencies_info = []
+        for item in data:
+            cryptocurrency = {
+                'name' : item['name'],
+                'symbol': item['symbol'],
+                'current_price': item['current_price'],
+                'icon_url': item['image']
+            }
+            cryptocurrencies_info.append(cryptocurrency)
         # Zwrócenie listy zawierającej dane o kryptowalutach
-        return data
+        return cryptocurrencies_info
     else:
         # Jeśli wystąpił błąd, zwróć pustą listę
         return []
     
 def get_crypto_curency_icon(coin_id):
     base_url = f"https://api.coingecko.com/api/v3/coins/{coin_id}"
+    response = requests.get(base_url)
+
+    if response.status_code == 200:
+        data = response.json()
+        return data['image']['thumb']
+    else:
+        print("blad zapytania")
+        return None
     
 
 def get_market_info():

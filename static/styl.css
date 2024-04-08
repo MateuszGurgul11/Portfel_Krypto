@@ -1,0 +1,5 @@
+.crypto-symbol 
+{
+    color: #707070; /* Jasnoszary kolor */
+    font-size: calc(1em - 3pt); /* Zmniejsz rozmiar czcionki o 5 punktów */
+}

@@ -68,7 +68,7 @@
     });
 })
 
-var monthlyTransactionsSum = {{ monthly_transactions_sum | tojson }};
+    var monthlyTransactionsSum = {{ monthly_transactions_sum|default([])|tojson }};
     var ctx = document.getElementById('yearlyExpensesChart').getContext('2d');
     var yearlyExpensesChart = new Chart(ctx, {
         type: 'line',

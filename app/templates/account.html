@@ -27,38 +27,28 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <h2>Yearly Expenses</h2>
-            <canvas id="yearlyExpensesChart"></canvas>
+        <h2>Recent Transactions</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Destination</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr>
+                    <td>{{ transaction.date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ transaction.destination }}</td>
+                    <td>${{ transaction.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         </div>
-    </div>
 </div>
 
-<h2>Recent Transactions</h2>
-<div class="table-responsive">
-    <table class="table">
-        <thead class="thead-dark">
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Date</th>
-                <th scope="col">Description</th>
-                <th scope="col">Amount</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for transaction in transactions %}
-            <tr>
-                <th scope="row">{{ loop.index }}</th>
-                <td>{{ transaction.date.strftime('%Y-%m-%d') }}</td>
-                <td>{{ transaction.description }}</td>
-                <td>${{ transaction.amount }}</td>
-                <td><a href="/details/{{ transaction.id }}" class="btn btn-info">Details</a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -68,28 +58,6 @@
     });
 })
 
-    var monthlyTransactionsSum = {{ monthly_transactions_sum|default([])|tojson }};
-    var ctx = document.getElementById('yearlyExpensesChart').getContext('2d');
-    var yearlyExpensesChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-            datasets: [{
-                label: 'Monthly Transactions Sum',
-                data: monthlyTransactionsSum,
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
 </script>
     
 {% endblock %}

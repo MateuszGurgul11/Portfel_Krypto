@@ -2,26 +2,8 @@ from flask import render_template, redirect, request, url_for, session, flash, m
 from . import app, db
 from .models import User, Balance, Transaction
 import hashlib
-from .crypto_client import get_crypto_curency_icon, get_top_cryptocurrencies, get_market_info, get_crypto_details
 from sqlalchemy import extract, func
 from datetime import datetime
-
-
-def get_monthly_transaction_sum(user_id):
-    current_year = datetime.now().year
-    monthly_sums = db.session.query(
-        extract('month', Transaction.date).label('month'),
-        func.sum(Transaction.amount).label('total')
-    ).filter(
-        Transaction.user_id == user_id,
-        extract('year', Transaction.date) == current_year
-    ).group_by('month').all()
-
-    monthly_sums_dict = {month: 0 for month in range(1, 13)}
-    for month, total in monthly_sums:
-        monthly_sums_dict[month] = total
-
-    return [monthly_sums_dict[month] for month in sorted(monthly_sums_dict)]
 
 
 @app.route("/register", methods=['POST', 'GET'])
@@ -69,19 +51,28 @@ def account():
         return redirect(url_for('login'))
     
     user = User.query.filter_by(username=session['username']).first()
+    transactions = Transaction.query.filter_by(user_id=user.id).all()
     current_balance = user.balance.current_balance if user.balance else 0
 
-    month_transaction_sum = get_monthly_transaction_sum(user.id)
-
-    return render_template("account.html", current_balance=current_balance, month_transaction_sum=month_transaction_sum)
+    return render_template("account.html", current_balance=current_balance, transactions=transactions)
 
 
 @app.route("/payment", methods=['POST', 'GET'])
 def payment():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
-        title = request.form['title']
-        amount = request.form['amount']
-        return redirect(url_for("homepage", amount=amount, title=title))
+        destination = request.form['destination']
+        account_number = request.form['account_number']
+        amount = float(request.form['amount'])
+        user = User.query.filter_by(username=session['username']).first()
+
+        new_transaction = Transaction(user_id=user.id, destination=destination, date=datetime.utcnow(), amount=amount)
+        db.session.add(new_transaction)
+        db.session.commit()
+
+        return redirect(url_for("account", amount=amount, destination=destination, account_number=account_number))
     return render_template("payment.html")
 
 
@@ -105,31 +96,11 @@ def add_funds():
     return render_template('account.html')
 
 
-@app.route("/currency_details/<string:currency_id>", methods=['GET'])
-def current_details_view(currency_id):
-    try:
-        crypto_details = get_crypto_details(currency_id)
-        if crypto_details:
-            return render_template("currency_details.html", crypto_details=crypto_details)
-        else:
-            return make_response(jsonify({'error': 'Nie udało się pobrać danych szczegółowych o walucie.'}), 404)
-    except Exception as e:
-        print(e)
-        return make_response(jsonify({'error': 'Wystąpił błąd podczas przetwarzania żądania.'}), 500)
-
-
 @app.route("/")
 def homepage():
-    cryptocurrencies_data = get_top_cryptocurrencies()
-    market_info = get_market_info()
     session_status = 'username' in session
     
-    return render_template("index.html", session_status=session_status, cryptocurrencies_data=cryptocurrencies_data, market_info=market_info)
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
+    return render_template("index.html", session_status=session_status)
 
 @app.before_request 
 def create_tables():
